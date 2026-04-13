@@ -6,10 +6,11 @@ An AI-powered document intelligence system that uses OCR, semantic search, and R
 - Backend: FastAPI (Python)  
 - Frontend: React  
 - Vector Database: Qdrant  
-- Cloud: Microsoft Azure (OCR)  
+- Cloud: Microsoft Azure  
 - Containerization: Docker and Docker Compose  
 
 ## Features
+- User sign-up with email verification
 - Upload and manage documents for analysis  
 - Ask questions in natural language and get accurate answers  
 - Search across documents using semantic understanding  
