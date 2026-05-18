@@ -126,7 +126,7 @@ export default function SignIn() {
 
               type="password"
 
-              placeholder="••••••••"
+              placeholder="password"
 
               value={password}
 

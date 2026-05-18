@@ -88,7 +88,7 @@ export default function SignUp() {
             <label>Password</label>
             <input
               type="password"
-              placeholder="Create a strong password"
+              placeholder="password"
               value={password}
               onChange={(e) => { setPassword(e.target.value); setShowRules(true); }}
               onFocus={() => setShowRules(true)}
