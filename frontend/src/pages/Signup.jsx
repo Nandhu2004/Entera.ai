@@ -41,7 +41,7 @@ export default function SignUp() {
 
     try {
       const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
-      const response = await fetch("${API_URL}/signup", {
+      const response = await fetch(`${API_URL}/signup`, {
         method: "POST",
         body: formData,
       });
