@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Theme.css";
 import { getUsername } from "./api";
@@ -105,28 +105,31 @@ export default function Dashboard() {
     localStorage.setItem("theme", darkMode ? "dark" : "light");
   }, [darkMode]);
 
-  useEffect(() => {
-    if (!hasToken()) { navigate("/signin"); return; }
-    fetchDocs();
-  }, [navigate]);
 
-  const fetchDocs = async () => {
-    try {
-      const token = localStorage.getItem("token") || localStorage.getItem("access_token");
-      const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
-
+// 2. Wrap fetchDocs in useCallback (add `navigate` as its dependency)
+const fetchDocs = useCallback(async () => {
+  try {
+    const token = localStorage.getItem("token") || localStorage.getItem("access_token");
+    const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+  
       const res = await fetch(`${API_URL}/documents`, {
       headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.status === 401) { navigate("/signin"); return; }
-      const data = await res.json();
-      setDocs(data);
-    } catch (err) {
-      console.error("Failed to fetch documents:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    });
+    if (res.status === 401) { navigate("/signin"); return; }
+    const data = await res.json();
+    setDocs(data);
+  } catch (err) {
+    console.error("Failed to fetch documents:", err);
+  } finally {
+    setLoading(false);
+  }
+}, [navigate]);
+
+// 3. Now the useEffect is valid — fetchDocs is stable
+useEffect(() => {
+  if (!hasToken()) { navigate("/signin"); return; }
+  fetchDocs();
+}, [navigate, fetchDocs]);
 
   // Derive stats from real docs
   const total      = docs.length;
