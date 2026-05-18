@@ -40,7 +40,8 @@ export default function SignUp() {
     formData.append("password", password);
 
     try {
-      const response = await fetch("http://localhost:8000/signup", {
+      const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+      const response = await fetch("${API_URL}/signup", {
         method: "POST",
         body: formData,
       });

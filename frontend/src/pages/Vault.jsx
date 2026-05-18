@@ -132,7 +132,8 @@ export default function Vault() {
 
   useEffect(() => {
     if (!token) return;
-    fetch("http://localhost:8000/documents", {
+    const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+    fetch("${API_URL}/documents", {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(r => r.ok ? r.json() : Promise.reject("Unauthorized"))
@@ -147,7 +148,8 @@ export default function Vault() {
 
   const handleDelete = async (doc) => {
     try {
-      const response = await fetch(`http://localhost:8000/documents/${doc.id}`, {
+      const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+      const response = await fetch(`${API_URL}/documents/${doc.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });

@@ -113,8 +113,10 @@ export default function Dashboard() {
   const fetchDocs = async () => {
     try {
       const token = localStorage.getItem("token") || localStorage.getItem("access_token");
-      const res = await fetch("http://localhost:8000/documents", {
-        headers: { Authorization: `Bearer ${token}` }
+      const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+
+      const res = await fetch(`${API_URL}/documents`, {
+      headers: { Authorization: `Bearer ${token}` }
       });
       if (res.status === 401) { navigate("/signin"); return; }
       const data = await res.json();
