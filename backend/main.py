@@ -288,6 +288,15 @@ def is_malicious_with_llm(question: str) -> bool:
     )
     verdict = response.choices[0].message.content.strip().upper()
     return verdict == "UNSAFE"
+
+SUSPICIOUS_KEYWORDS = [
+    "instruction", "prompt", "system", "ignore", "pretend",
+    "forget", "override", "act", "jailbreak", "bypass"
+]
+
+def needs_llm_check(question: str) -> bool:
+    lowered = question.lower()
+    return any(keyword in lowered for keyword in SUSPICIOUS_KEYWORDS)
 # -----------------------------
 # Ask Question
 # -----------------------------
@@ -307,7 +316,7 @@ async def ask(
         flag_user(user_id, db)
         raise HTTPException(status_code=400, detail="Invalid question")
 
-    if is_malicious_with_llm(question):
+    if needs_llm_check(question) and is_malicious_with_llm(question):
         flag_user(user_id, db)
         raise HTTPException(status_code=400, detail="Invalid question")
 
