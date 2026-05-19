@@ -1,5 +1,5 @@
 import uuid
-from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, status
+from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, status, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
@@ -94,12 +94,12 @@ app.add_middleware(
 # -----------------------------
 @app.post("/signup")
 async def signup(
+    background_tasks: BackgroundTasks,
     username: str = Form(...),
     email: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
-
     # Check if email exists
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -109,7 +109,6 @@ async def signup(
         raise HTTPException(status_code=400, detail="Username already taken")
 
     hashed_pw = get_password_hash(password)
-
     token = str(uuid.uuid4())
 
     new_user = User(
@@ -123,13 +122,9 @@ async def signup(
     db.add(new_user)
     db.commit()
 
-    try:
-        send_verification_email(email, token)
-    except Exception as e:
-        print(f"Email send failed: {e}")
+    background_tasks.add_task(send_verification_email, email, token)
 
     return {"message": f"Verification email sent to {email}. Please verify to login."}
-
 
 # -----------------------------
 # Email Verification

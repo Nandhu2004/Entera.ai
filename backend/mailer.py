@@ -33,10 +33,8 @@ def send_verification_email(user_email: str, token: str):
     }
 
     try:
-        poller = client.begin_send(message)
-        result = poller.result()
+        client.begin_send(message)
         print(f"Email sent to {user_email}")
-        return result
 
     except Exception as ex:
         print(f"Failed to send email: {ex}")
