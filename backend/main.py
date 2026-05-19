@@ -13,6 +13,7 @@ from database import get_db, engine, Base
 from mailer import send_verification_email
 from datetime import datetime, timedelta
 import re
+import os
 import logging
 from fastapi.responses import RedirectResponse
 
