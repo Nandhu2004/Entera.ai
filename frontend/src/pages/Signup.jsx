@@ -84,7 +84,7 @@ export default function SignUp() {
             We sent a verification email to
           </p>
           <div style={{
-            display: "inline-block", background: "#1f2937", color: "#5f656b",
+            display: "inline-block", background: "#1f2937", color: "#ffffff",
             borderRadius: 20, padding: "4px 16px", fontSize: 13, marginBottom: "1.75rem",
           }}>
             {sentEmail}
