@@ -76,7 +76,6 @@ export default function SignUp() {
               <polyline points="22,6 12,13 2,6"/>
             </svg>
           </div>
-          </div>
 
           <h2 style={{ color: "#f9fafb", fontSize: 22, fontWeight: 600, margin: "0 0 8px" }}>
             Check your inbox
@@ -94,10 +93,7 @@ export default function SignUp() {
             Click the link in the email to activate your account, then sign in.
           </p>
 
-          <button
-            className="auth-btn"
-            onClick={() => navigate("/signin")}
-          >
+          <button className="auth-btn" onClick={() => navigate("/signin")}>
             Go to sign in
           </button>
 
