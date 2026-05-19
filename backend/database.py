@@ -3,7 +3,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 # 2. Get the Database URL
-# In Docker, this will be: postgresql://postgres:password@db:5432/entera_db
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 # 3. Create the SQLAlchemy Engine
