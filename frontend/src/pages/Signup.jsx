@@ -77,19 +77,19 @@ export default function SignUp() {
             </svg>
           </div>
 
-          <h2 style={{ color: "#f9fafb", fontSize: 22, fontWeight: 600, margin: "0 0 8px" }}>
+          <h2 style={{ color: "#94a3b8", fontSize: 22, fontWeight: 600, margin: "0 0 8px" }}>
             Check your inbox
           </h2>
-          <p style={{ color: "#9ca3af", fontSize: 14, lineHeight: 1.7, margin: "0 0 1.25rem" }}>
+          <p style={{ color: "#94a3b8", fontSize: 14, lineHeight: 1.7, margin: "0 0 1.25rem" }}>
             We sent a verification email to
           </p>
           <div style={{
-            display: "inline-block", background: "#1f2937", color: "#d1d5db",
+            display: "inline-block", background: "#1f2937", color: "#94a3b8",
             borderRadius: 20, padding: "4px 16px", fontSize: 13, marginBottom: "1.75rem",
           }}>
             {sentEmail}
           </div>
-          <p style={{ color: "#9ca3af", fontSize: 13, lineHeight: 1.6, margin: "0 0 1.75rem" }}>
+          <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.6, margin: "0 0 1.75rem" }}>
             Click the link in the email to activate your account, then sign in.
           </p>
 

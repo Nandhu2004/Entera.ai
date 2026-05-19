@@ -8,19 +8,9 @@ export default function VerifiedEmail() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = searchParams.get("token");
-    if (!token) {
-      setStatus("invalid");
-      return;
-    }
-
-    const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
-    fetch(`${API_URL}/verify?token=${token}`)
-      .then((res) => {
-        if (res.ok) setStatus("success");
-        else setStatus("invalid");
-      })
-      .catch(() => setStatus("invalid"));
+    const s = searchParams.get("status");
+    if (s === "success") setStatus("success");
+    else setStatus("invalid");
   }, [searchParams]);
 
   return (
