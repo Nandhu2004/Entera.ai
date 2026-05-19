@@ -35,8 +35,8 @@ export default function VerifiedEmail() {
               display: "flex", alignItems: "center", justifyContent: "center",
               margin: "0 auto 1.25rem",
             }}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-                stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+                stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                 style={{ animation: "spin 1s linear infinite" }}>
                 <path d="M21 12a9 9 0 1 1-6.219-8.56" />
               </svg>
@@ -52,12 +52,12 @@ export default function VerifiedEmail() {
           <>
             <div style={{
               width: 64, height: 64, borderRadius: "50%",
-              background: "#0f2a1a", border: "2px solid #166534",
+              background: "#1f2937",
               display: "flex", alignItems: "center", justifyContent: "center",
               margin: "0 auto 1.25rem",
             }}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-                stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+                stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
@@ -77,12 +77,12 @@ export default function VerifiedEmail() {
           <>
             <div style={{
               width: 64, height: 64, borderRadius: "50%",
-              background: "#2a0f0f", border: "2px solid #7f1d1d",
+              background: "#1f2937",
               display: "flex", alignItems: "center", justifyContent: "center",
               margin: "0 auto 1.25rem",
             }}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-                stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+                stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>

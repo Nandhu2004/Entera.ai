@@ -14,13 +14,13 @@ function validatePassword(password) {
 }
 
 export default function SignUp() {
-  const [fullName, setFullName]     = useState("");
-  const [email, setEmail]           = useState("");
-  const [password, setPassword]     = useState("");
-  const [error, setError]           = useState("");
-  const [showRules, setShowRules]   = useState(false);
-  const [submitted, setSubmitted]   = useState(false);
-  const [sentEmail, setSentEmail]   = useState("");
+  const [fullName, setFullName]   = useState("");
+  const [email, setEmail]         = useState("");
+  const [password, setPassword]   = useState("");
+  const [error, setError]         = useState("");
+  const [showRules, setShowRules] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [sentEmail, setSentEmail] = useState("");
   const navigate = useNavigate();
 
   const rules = validatePassword(password);
@@ -66,12 +66,12 @@ export default function SignUp() {
         <div className="auth-card" style={{ textAlign: "center" }}>
           <div style={{
             width: 64, height: 64, borderRadius: "50%",
-            background: "#0f2a1a", border: "2px solid #166534",
+            background: "#1f2937",
             display: "flex", alignItems: "center", justifyContent: "center",
             margin: "0 auto 1.25rem",
           }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-              stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+              stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
               <polyline points="22,6 12,13 2,6"/>
             </svg>
@@ -89,7 +89,7 @@ export default function SignUp() {
           }}>
             {sentEmail}
           </div>
-          <p style={{ color: "#6b7280", fontSize: 13, lineHeight: 1.6, margin: "0 0 1.75rem" }}>
+          <p style={{ color: "#9ca3af", fontSize: 13, lineHeight: 1.6, margin: "0 0 1.75rem" }}>
             Click the link in the email to activate your account, then sign in.
           </p>
 
