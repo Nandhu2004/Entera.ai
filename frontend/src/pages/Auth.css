@@ -3,7 +3,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #0e1d34; /* Matching your navbar/hero color */
+  background-color: #0e1d34;
   padding: 20px;
 }
 
@@ -14,6 +14,11 @@
   width: 100%;
   max-width: 450px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Centered variant used by VerifiedEmail */
+.auth-card--centered {
+  text-align: center;
 }
 
 .auth-header {
@@ -52,6 +57,7 @@
   font-size: 16px;
   outline: none;
   transition: border 0.3s;
+  box-sizing: border-box;
 }
 
 .form-group input:focus {
@@ -86,4 +92,89 @@
   color: #007bff;
   text-decoration: none;
   font-weight: 600;
+}
+
+.auth-error {
+  color: #d93025;
+  background: rgba(217, 48, 37, 0.08);
+  border: 1px solid rgba(217, 48, 37, 0.2);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+/* ---- Verify states ---- */
+.verify-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+}
+
+.verify-icon--loading {
+  background: #e8f0fe;
+  color: #1a6ef7;
+}
+
+.verify-icon--success {
+  background: #e6f9f3;
+  color: #0d9e6e;
+}
+
+.verify-icon--error {
+  background: #fde8e8;
+  color: #d93025;
+}
+
+.verify-title {
+  color: #0e1d34;
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.verify-body {
+  color: #5f656b;
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 0 0 1.75rem;
+}
+
+/* Spin animation */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ---- Mobile ---- */
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 28px 20px;
+    border-radius: 10px;
+  }
+
+  .auth-header h2 {
+    font-size: 22px;
+  }
+
+  .auth-header p {
+    font-size: 13px;
+  }
+
+  .auth-btn {
+    font-size: 15px;
+    padding: 13px;
+  }
+
+  .verify-title {
+    font-size: 19px;
+  }
 }

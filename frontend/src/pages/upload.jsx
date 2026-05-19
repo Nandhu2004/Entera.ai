@@ -40,7 +40,7 @@ function ThemeToggle({ darkMode, onToggle }) {
 }
 
 // ── Sidebar ───────────────────────────────────────────────────
-function Sidebar({ active, username, initials }) {
+function Sidebar({ active, username, initials, isOpen, onClose }) {
   const navigate = useNavigate();
   const navItems = [
     { label: "Dashboard",      icon: "⊞", path: "/dashboard" },
@@ -49,25 +49,40 @@ function Sidebar({ active, username, initials }) {
     { label: "Upload Center",  icon: "⬆", path: "/upload" },
   ];
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${isOpen ? " open" : ""}`}>
       <div className="sidebar-logo">
         <div className="logo-icon">📄</div>
         <span className="logo-text">Entera<em>.ai</em></span>
+        <button
+          onClick={onClose}
+          aria-label="Close menu"
+          style={{
+            marginLeft: "auto", background: "none", border: "none",
+            cursor: "pointer", fontSize: 18, color: "var(--text-muted)",
+            display: "flex", alignItems: "center", padding: 4,
+            lineHeight: 1,
+          }}
+        >✕</button>
       </div>
       <nav className="sidebar-nav">
         <span className="nav-section-label">Platform</span>
         {navItems.map((item) => (
-          <Link key={item.path} to={item.path}
-            className={`nav-item${active === item.label ? " active" : ""}`}>
+          <Link
+            key={item.path}
+            to={item.path}
+            className={`nav-item${active === item.label ? " active" : ""}`}
+            onClick={onClose}
+          >
             <span className="nav-icon">{item.icon}</span>
             <span className="nav-label">{item.label}</span>
           </Link>
         ))}
         <span className="nav-section-label" style={{ marginTop: 16 }}>System</span>
-        <div className="nav-item"
+        <div
+          className="nav-item"
           onClick={() => { fullLogout(); navigate("/"); }}
-          style={{ color: "var(--status-error)" }}>
-          
+          style={{ color: "var(--status-error)" }}
+        >
           <span className="nav-label">Sign Out</span>
         </div>
       </nav>
@@ -100,22 +115,19 @@ const STAGE_COLORS = {
 
 function makeFileEntry(rawFile) {
   return {
-    id:       Math.random().toString(36).slice(2),
+    id:            Math.random().toString(36).slice(2),
     rawFile,
-    name:     rawFile.name,
-    size:     `${(rawFile.size / (1024 * 1024)).toFixed(1)} MB`,
-    type:     rawFile.type || "application/pdf",
-    stages:   { upload: "pending", ocr: "pending", vectorize: "pending" },
-    progress: { upload: 0, ocr: 0, vectorize: 0 },
-    done:     false,
-    error:    null,
-    // Populated from real POST /upload response: { message, doc_id, owner }
-    docId:    null,
-    owner:    null,
-    message:  null,
-    // Populated from real API response if the endpoint returns extracted text
-    ocrText:  null,
-    // Real OCR confidence returned by the server, if available
+    name:          rawFile.name,
+    size:          `${(rawFile.size / (1024 * 1024)).toFixed(1)} MB`,
+    type:          rawFile.type || "application/pdf",
+    stages:        { upload: "pending", ocr: "pending", vectorize: "pending" },
+    progress:      { upload: 0, ocr: 0, vectorize: 0 },
+    done:          false,
+    error:         null,
+    docId:         null,
+    owner:         null,
+    message:       null,
+    ocrText:       null,
     ocrConfidence: null,
   };
 }
@@ -126,9 +138,10 @@ export default function Upload() {
   const initials     = getStoredInitials();
   const fileInputRef = useRef(null);
 
-  const [files, setFiles]             = useState([]);
-  const [dragActive, setDragActive]   = useState(false);
-  const [validationFile, setValidFile] = useState(null);
+  const [files, setFiles]               = useState([]);
+  const [dragActive, setDragActive]     = useState(false);
+  const [validationFile, setValidFile]  = useState(null);
+  const [sidebarOpen, setSidebarOpen]   = useState(false);
 
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem("theme") === "dark";
@@ -143,6 +156,19 @@ export default function Upload() {
     if (!hasToken()) navigate("/signin");
   }, [navigate]);
 
+  // Close sidebar on resize to desktop
+  useEffect(() => {
+    const onResize = () => { if (window.innerWidth > 700) setSidebarOpen(false); };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // Prevent body scroll when sidebar is open on mobile
+  useEffect(() => {
+    document.body.style.overflow = sidebarOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [sidebarOpen]);
+
   const updateFile = useCallback((id, patch) => {
     setFiles((prev) => prev.map((f) => f.id === id ? { ...f, ...patch } : f));
   }, []);
@@ -150,8 +176,6 @@ export default function Upload() {
   const startUpload = useCallback(async (entry) => {
     updateFile(entry.id, { stages: { upload: "active", ocr: "pending", vectorize: "pending" } });
 
-    // Simulate OCR + vectorize progress while the real upload is in flight
-    // (these stages run server-side inside store_document() before the response returns)
     let ocrPct = 0;
     let vecPct = 0;
     let ocrInterval = null;
@@ -207,18 +231,16 @@ export default function Upload() {
       ocrInterval && clearInterval(ocrInterval);
       vecInterval && clearInterval(vecInterval);
 
-      // Populate from real server response: { message, doc_id, owner }
-      // ocrText and ocrConfidence populated if your endpoint returns them
       setFiles((prev) => prev.map((f) => f.id !== entry.id ? f : ({
         ...f,
         stages:        { upload: "done", ocr: "done", vectorize: "done" },
         progress:      { upload: 100, ocr: 100, vectorize: 100 },
         done:          true,
         error:         null,
-        docId:         response.doc_id   || null,
-        owner:         response.owner    || null,
-        message:       response.message  || null,
-        ocrText:       response.ocr_text || null,
+        docId:         response.doc_id        || null,
+        owner:         response.owner         || null,
+        message:       response.message       || null,
+        ocrText:       response.ocr_text      || null,
         ocrConfidence: response.ocr_confidence || null,
       })));
 
@@ -261,11 +283,30 @@ export default function Upload() {
 
   return (
     <div className="app-shell">
-      <Sidebar active="Upload Center" username={username} initials={initials} />
+      {/* Mobile sidebar overlay */}
+      <div
+        className={`sidebar-overlay${sidebarOpen ? " open" : ""}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+
+      <Sidebar
+        active="Upload Center"
+        username={username}
+        initials={initials}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
       <div className="main-content">
         <header className="page-header">
-          <div>
+          {/* Hamburger — hidden on desktop via CSS */}
+          <button
+            className="menu-toggle"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open menu"
+          >☰</button>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div className="page-title">Upload Center</div>
             <div className="page-subtitle">
               Upload documents to index and query with AI
@@ -276,19 +317,29 @@ export default function Upload() {
               )}
             </div>
           </div>
+
           <div className="header-right">
             <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode(d => !d)} />
             {completedCount > 0 && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 99, background: "rgba(34,211,160,0.1)", border: "1px solid rgba(34,211,160,0.25)" }}>
+              <div style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "5px 12px", borderRadius: 99,
+                background: "rgba(34,211,160,0.1)",
+                border: "1px solid rgba(34,211,160,0.25)",
+              }}>
                 <span className="status-dot success" />
-                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--status-success)" }}>{completedCount} indexed</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--status-success)" }}>
+                  {completedCount} indexed
+                </span>
               </div>
             )}
           </div>
         </header>
 
         <main className="page-body">
-          <div style={{ display: "grid", gridTemplateColumns: validationFile ? "1fr 380px" : "1fr", gap: 20 }}>
+          {/* Two-column on desktop, single-column on mobile */}
+          <div className={`upload-layout${validationFile ? " has-panel" : ""}`}>
+
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
               {/* Drop Zone */}
@@ -297,38 +348,50 @@ export default function Upload() {
                 onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
                 onDragLeave={() => setDragActive(false)}
                 onClick={() => fileInputRef.current?.click()}
-                className="anim-up"
+                className="anim-up drop-zone"
                 style={{
                   border: `2px dashed ${dragActive ? "var(--accent-blue)" : "var(--border-default)"}`,
-                  borderRadius: "var(--radius-xl)", padding: "48px 32px",
-                  textAlign: "center", cursor: "pointer",
-                  transition: "all var(--t-normal)",
                   background: dragActive ? "var(--surface-active)" : "var(--surface-2)",
                   boxShadow: dragActive ? "var(--shadow-glow)" : "var(--shadow-card)",
-                  position: "relative", overflow: "hidden",
                 }}
               >
                 <div style={{ position: "relative" }}>
-                  <div style={{ fontSize: 52, marginBottom: 16, transition: "filter 0.2s", animation: dragActive ? "bounce 0.5s infinite" : "none" }}>
+                  <div style={{
+                    fontSize: 52, marginBottom: 16,
+                    animation: dragActive ? "bounce 0.5s infinite" : "none",
+                  }}>
                     {dragActive ? "📂" : "📁"}
                   </div>
-                  <div style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 700, color: "var(--text-primary)", marginBottom: 8 }}>
+                  <div style={{
+                    fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 700,
+                    color: "var(--text-primary)", marginBottom: 8,
+                  }}>
                     {dragActive ? "Release to Upload" : "Drop Files Here"}
                   </div>
                   <div style={{ fontSize: 13.5, color: "var(--text-muted)", marginBottom: 22 }}>
                     PDF, PNG, JPG · Up to 50 MB per file
                   </div>
-                  <button className="btn btn-primary"
-                    onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
+                  <button
+                    className="btn btn-primary"
+                    onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                  >
                     Browse Files
                   </button>
 
                   {/* Pipeline stage legend */}
-                  <div style={{ display: "flex", gap: 16, justifyContent: "center", marginTop: 22, flexWrap: "wrap" }}>
+                  <div className="stage-legend">
                     {STAGES.map((s, i) => (
                       <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        {i > 0 && <div style={{ width: 18, height: 1, background: "var(--border-subtle)" }} />}
-                        <div style={{ width: 24, height: 24, borderRadius: "50%", background: "var(--surface-active)", border: "1px solid var(--border-strong)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>
+                        {i > 0 && (
+                          <div style={{ width: 18, height: 1, background: "var(--border-subtle)" }} />
+                        )}
+                        <div style={{
+                          width: 24, height: 24, borderRadius: "50%",
+                          background: "var(--surface-active)",
+                          border: "1px solid var(--border-strong)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 11, flexShrink: 0,
+                        }}>
                           {s.icon}
                         </div>
                         <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{s.desc}</span>
@@ -351,7 +414,10 @@ export default function Upload() {
               {files.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: 0.8 }}>
+                    <div style={{
+                      fontSize: 13, fontWeight: 700, color: "var(--text-secondary)",
+                      textTransform: "uppercase", letterSpacing: 0.8,
+                    }}>
                       Processing Queue ({files.length})
                     </div>
                     {completedCount > 0 && (
@@ -365,17 +431,32 @@ export default function Upload() {
 
                         {/* File info */}
                         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                          <div style={{ width: 42, height: 50, borderRadius: 8, flexShrink: 0, background: "var(--surface-active)", border: "1px solid var(--border-strong)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>
+                          <div style={{
+                            width: 42, height: 50, borderRadius: 8, flexShrink: 0,
+                            background: "var(--surface-active)",
+                            border: "1px solid var(--border-strong)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 20,
+                          }}>
                             📄
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: 600, fontSize: 13.5, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <div style={{
+                              fontWeight: 600, fontSize: 13.5, color: "var(--text-primary)",
+                              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                            }}>
                               {file.name}
                             </div>
-                            <div style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 2, display: "flex", gap: 10 }}>
+                            <div style={{
+                              fontSize: 11.5, color: "var(--text-muted)", marginTop: 2,
+                              display: "flex", gap: 10, flexWrap: "wrap",
+                            }}>
                               <span>{file.size}</span>
                               {file.docId && (
-                                <span style={{ fontFamily: "var(--font-mono)", color: "var(--accent-blue)", fontSize: 11 }}>
+                                <span style={{
+                                  fontFamily: "var(--font-mono)",
+                                  color: "var(--accent-blue)", fontSize: 11,
+                                }}>
                                   id: {file.docId.slice(0, 8)}…
                                 </span>
                               )}
@@ -393,7 +474,14 @@ export default function Upload() {
 
                         {/* Error banner */}
                         {file.error && (
-                          <div style={{ background: "rgba(255,92,122,0.08)", border: "1px solid rgba(255,92,122,0.25)", borderRadius: "var(--radius-sm)", padding: "9px 12px", marginBottom: 12, fontSize: 12.5, color: "var(--status-error)" }}>
+                          <div style={{
+                            background: "rgba(255,92,122,0.08)",
+                            border: "1px solid rgba(255,92,122,0.25)",
+                            borderRadius: "var(--radius-sm)",
+                            padding: "9px 12px", marginBottom: 12,
+                            fontSize: 12.5, color: "var(--status-error)",
+                            wordBreak: "break-word",
+                          }}>
                             ⚠ {file.error}
                           </div>
                         )}
@@ -407,13 +495,30 @@ export default function Upload() {
                             return (
                               <div key={stage.key}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
-                                  <div style={{ width: 26, height: 26, borderRadius: "50%", flexShrink: 0, background: col.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, border: `1px solid ${col.color}40`, transition: "all 0.3s" }}>
+                                  <div style={{
+                                    width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
+                                    background: col.bg,
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    fontSize: 12,
+                                    border: `1px solid ${col.color}40`,
+                                    transition: "all 0.3s",
+                                  }}>
                                     {st === "done" ? "✓" : st === "error" ? "✗" : st === "active" ? "⟳" : stage.icon}
                                   </div>
-                                  <div style={{ flex: 1 }}>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                                      <span style={{ fontSize: 12, fontWeight: 600, color: col.color }}>{stage.desc}</span>
-                                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: col.color }}>{pct}%</span>
+                                      <span style={{
+                                        fontSize: 12, fontWeight: 600, color: col.color,
+                                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                      }}>
+                                        {stage.desc}
+                                      </span>
+                                      <span style={{
+                                        fontFamily: "var(--font-mono)", fontSize: 11,
+                                        color: col.color, flexShrink: 0, marginLeft: 6,
+                                      }}>
+                                        {pct}%
+                                      </span>
                                     </div>
                                     <div className="progress-track">
                                       <div className="progress-fill" style={{
@@ -434,14 +539,24 @@ export default function Upload() {
 
                         {/* Server response message */}
                         {file.done && file.message && (
-                          <div style={{ marginTop: 12, padding: "8px 12px", background: "rgba(34,211,160,0.06)", borderRadius: "var(--radius-sm)", border: "1px solid rgba(34,211,160,0.2)", fontSize: 12, color: "var(--status-success)" }}>
+                          <div style={{
+                            marginTop: 12, padding: "8px 12px",
+                            background: "rgba(34,211,160,0.06)",
+                            borderRadius: "var(--radius-sm)",
+                            border: "1px solid rgba(34,211,160,0.2)",
+                            fontSize: 12, color: "var(--status-success)",
+                          }}>
                             ✓ {file.message}
                           </div>
                         )}
 
                         {/* Actions */}
                         {file.done && (
-                          <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border-subtle)", display: "flex", gap: 8 }}>
+                          <div style={{
+                            marginTop: 14, paddingTop: 14,
+                            borderTop: "1px solid var(--border-subtle)",
+                            display: "flex", gap: 8, flexWrap: "wrap",
+                          }}>
                             {(file.ocrText || file.ocrConfidence) && (
                               <button className="btn btn-secondary btn-sm" onClick={() => setValidFile(file)}>
                                 🔍 Validate Extraction
@@ -467,15 +582,22 @@ export default function Upload() {
 
             {/* Validation Panel — only shown when server returns ocr_text */}
             {validationFile && (
-              <div style={{ position: "sticky", top: "calc(var(--header-height) + 26px)" }}>
+              <div className="validation-panel">
                 <div className="card anim-scale">
                   <div className="card-header">
                     <span className="card-title">Extraction Validation</span>
-                    <button className="btn btn-ghost btn-icon" style={{ fontSize: 14 }} onClick={() => setValidFile(null)}>✕</button>
+                    <button
+                      className="btn btn-ghost btn-icon"
+                      style={{ fontSize: 14 }}
+                      onClick={() => setValidFile(null)}
+                    >✕</button>
                   </div>
                   <div className="card-inner">
                     <div style={{ marginBottom: 12 }}>
-                      <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text-primary)", marginBottom: 6 }}>
+                      <div style={{
+                        fontSize: 12.5, fontWeight: 600, color: "var(--text-primary)",
+                        marginBottom: 6, wordBreak: "break-all",
+                      }}>
                         {validationFile.name}
                       </div>
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -489,36 +611,66 @@ export default function Upload() {
                     </div>
 
                     {validationFile.owner && (
-                      <div style={{ marginBottom: 12, padding: "8px 12px", background: "var(--surface-3)", borderRadius: "var(--radius-sm)", fontSize: 11.5, color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
+                      <div style={{
+                        marginBottom: 12, padding: "8px 12px",
+                        background: "var(--surface-3)", borderRadius: "var(--radius-sm)",
+                        fontSize: 11.5, color: "var(--text-muted)",
+                        border: "1px solid var(--border-subtle)",
+                      }}>
                         <span>Owner: </span>
-                        <span style={{ color: "var(--accent-blue)", fontFamily: "var(--font-mono)" }}>{validationFile.owner}</span>
+                        <span style={{ color: "var(--accent-blue)", fontFamily: "var(--font-mono)" }}>
+                          {validationFile.owner}
+                        </span>
                       </div>
                     )}
 
-                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>
+                    <div style={{
+                      fontSize: 11, fontWeight: 700, letterSpacing: 1,
+                      textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6,
+                    }}>
                       Extracted Text
                     </div>
-                    <div style={{ background: "var(--surface-3)", borderRadius: "var(--radius-md)", padding: 12, fontFamily: "var(--font-mono)", fontSize: 11.5, color: "var(--text-secondary)", lineHeight: 1.7, maxHeight: 260, overflowY: "auto", border: "1px solid var(--border-subtle)", whiteSpace: "pre-wrap" }}>
+                    <div style={{
+                      background: "var(--surface-3)", borderRadius: "var(--radius-md)",
+                      padding: 12, fontFamily: "var(--font-mono)",
+                      fontSize: 11.5, color: "var(--text-secondary)",
+                      lineHeight: 1.7, maxHeight: 260, overflowY: "auto",
+                      border: "1px solid var(--border-subtle)", whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
+                    }}>
                       {validationFile.ocrText || "No extracted text returned by the server."}
                     </div>
 
-                    {/* OCR confidence — only shown if server returns it */}
                     {validationFile.ocrConfidence != null && (
-                      <div style={{ marginTop: 14, padding: 12, background: "var(--surface-3)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
+                      <div style={{
+                        marginTop: 14, padding: 12,
+                        background: "var(--surface-3)", borderRadius: "var(--radius-md)",
+                        border: "1px solid var(--border-subtle)",
+                      }}>
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                           <span style={{ fontSize: 12, color: "var(--text-muted)" }}>OCR Confidence</span>
-                          <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--status-success)", fontWeight: 600 }}>
+                          <span style={{
+                            fontFamily: "var(--font-mono)", fontSize: 12,
+                            color: "var(--status-success)", fontWeight: 600,
+                          }}>
                             {validationFile.ocrConfidence}%
                           </span>
                         </div>
                         <div className="progress-track">
-                          <div className="progress-fill" style={{ width: `${validationFile.ocrConfidence}%`, background: "linear-gradient(90deg, var(--status-success), var(--accent-teal))" }} />
+                          <div className="progress-fill" style={{
+                            width: `${validationFile.ocrConfidence}%`,
+                            background: "linear-gradient(90deg, var(--status-success), var(--accent-teal))",
+                          }} />
                         </div>
                       </div>
                     )}
 
                     <div style={{ marginTop: 14, display: "flex", gap: 8 }}>
-                      <Link to="/chat" className="btn btn-primary" style={{ flex: 1, justifyContent: "center", fontSize: 12 }}>
+                      <Link
+                        to="/chat"
+                        className="btn btn-primary"
+                        style={{ flex: 1, justifyContent: "center", fontSize: 12 }}
+                      >
                         Ask AI about this →
                       </Link>
                     </div>
@@ -533,6 +685,63 @@ export default function Upload() {
       <style>{`
         @keyframes bounce  { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
         @keyframes scaleIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+
+        /* ── Drop Zone ── */
+        .drop-zone {
+          border-radius: var(--radius-xl);
+          padding: 48px 32px;
+          text-align: center;
+          cursor: pointer;
+          transition: all var(--t-normal);
+          position: relative;
+          overflow: hidden;
+        }
+        @media (max-width: 700px) {
+          .drop-zone { padding: 32px 20px; }
+        }
+
+        /* ── Stage legend wraps on small screens ── */
+        .stage-legend {
+          display: flex;
+          gap: 16px;
+          justify-content: center;
+          margin-top: 22px;
+          flex-wrap: wrap;
+        }
+        @media (max-width: 500px) {
+          .stage-legend { gap: 10px; }
+          .stage-legend > div { flex-basis: 100%; justify-content: center; }
+        }
+
+        /* ── Upload layout: two-column with sticky panel on desktop ── */
+        .upload-layout {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+        .upload-layout.has-panel {
+          grid-template-columns: 1fr 380px;
+        }
+        @media (max-width: 900px) {
+          .upload-layout.has-panel {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        /* ── Validation panel: sticky on desktop, normal flow on mobile ── */
+        .validation-panel {
+          position: sticky;
+          top: calc(var(--header-height) + 26px);
+        }
+        @media (max-width: 900px) {
+          .validation-panel { position: static; }
+        }
+
+        /* ── Header: stack on very small screens ── */
+        @media (max-width: 400px) {
+          .header-right { gap: 6px; }
+          .theme-toggle span:last-child { display: none; }
+        }
       `}</style>
     </div>
   );

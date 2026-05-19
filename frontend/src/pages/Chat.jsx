@@ -38,7 +38,7 @@ function ThemeToggle({ darkMode, onToggle }) {
   );
 }
 
-function Sidebar({ active, username, initials }) {
+function Sidebar({ active, username, initials, isOpen, onClose }) {
   const navigate = useNavigate();
   const navItems = [
     { label: "Dashboard",      icon: "⊞", path: "/dashboard" },
@@ -47,37 +47,41 @@ function Sidebar({ active, username, initials }) {
     { label: "Upload Center",  icon: "⬆", path: "/upload" },
   ];
   return (
-    <aside className="sidebar">
-      <div className="sidebar-logo">
-        <div className="logo-icon">📄</div>
-        <span className="logo-text">Entera<em>.ai</em></span>
-      </div>
-      <nav className="sidebar-nav">
-        <span className="nav-section-label">Platform</span>
-        {navItems.map((item) => (
-          <Link key={item.path} to={item.path}
-            className={`nav-item${active === item.label ? " active" : ""}`}>
-            <span className="nav-icon">{item.icon}</span>
-            <span className="nav-label">{item.label}</span>
-          </Link>
-        ))}
-        <span className="nav-section-label" style={{ marginTop: 16 }}>System</span>
-        <div className="nav-item"
-          onClick={() => { fullLogout(); navigate("/"); }}
-          style={{ color: "var(--status-error)" }}>
-          <span className="nav-label">Sign Out</span>
+    <>
+      <div className={`sidebar-overlay${isOpen ? " open" : ""}`} onClick={onClose} />
+      <aside className={`sidebar${isOpen ? " open" : ""}`}>
+        <div className="sidebar-logo">
+          <div className="logo-icon">📄</div>
+          <span className="logo-text">Entera<em>.ai</em></span>
         </div>
-      </nav>
-      <div className="sidebar-footer">
-        <div className="sidebar-user">
-          <div className="user-avatar">{initials}</div>
-          <div>
-            <div className="user-name">{username || "User"}</div>
-            <div className="user-role">Verified Account</div>
+        <nav className="sidebar-nav">
+          <span className="nav-section-label">Platform</span>
+          {navItems.map((item) => (
+            <Link key={item.path} to={item.path}
+              className={`nav-item${active === item.label ? " active" : ""}`}
+              onClick={onClose}>
+              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-label">{item.label}</span>
+            </Link>
+          ))}
+          <span className="nav-section-label" style={{ marginTop: 16 }}>System</span>
+          <div className="nav-item"
+            onClick={() => { fullLogout(); navigate("/"); }}
+            style={{ color: "var(--status-error)" }}>
+            <span className="nav-label">Sign Out</span>
+          </div>
+        </nav>
+        <div className="sidebar-footer">
+          <div className="sidebar-user">
+            <div className="user-avatar">{initials}</div>
+            <div>
+              <div className="user-name">{username || "User"}</div>
+              <div className="user-role">Verified Account</div>
+            </div>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }
 
@@ -127,8 +131,9 @@ export default function Chat() {
   const [isLoading, setIsLoading] = useState(false);
   const [history, setHistory] = useState([]);
   const [apiError, setApiError] = useState(null);
-
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", darkMode ? "dark" : "light");
@@ -143,6 +148,18 @@ export default function Chat() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  // Close panels on resize to desktop
+  useEffect(() => {
+    const handler = () => {
+      if (window.innerWidth > 700) {
+        setSidebarOpen(false);
+        setHistoryOpen(false);
+      }
+    };
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+
   const sendMessage = async (text) => {
     const q = (text || input).trim();
     if (!q || isLoading) return;
@@ -152,17 +169,17 @@ export default function Chat() {
     setMessages((prev) => [...prev, { role: "user", content: q }]);
     setIsLoading(true);
     setHistory((prev) => [{ id: Date.now(), question: q }, ...prev]);
+    // Close history panel on mobile after sending
+    setHistoryOpen(false);
 
     try {
       const result = await askQuestion(q);
-
       const answerText =
         result?.answer ||
         result?.result ||
         result?.response ||
         (typeof result === "string" ? result : null) ||
         "I couldn't find a relevant answer in the indexed documents.";
-
       setMessages((prev) => [...prev, { role: "assistant", content: answerText }]);
     } catch (err) {
       setApiError(err.message);
@@ -181,22 +198,34 @@ export default function Chat() {
 
   return (
     <div className="app-shell">
-      <Sidebar active="AI Query Lab" username={username} initials={initials} />
+      <Sidebar
+        active="AI Query Lab"
+        username={username}
+        initials={initials}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      {/* History panel overlay — mobile only */}
+      {historyOpen && (
+        <div
+          className="sidebar-overlay open"
+          style={{ zIndex: 148 }}
+          onClick={() => setHistoryOpen(false)}
+        />
+      )}
 
       {/* Query History Panel */}
-      <div style={{
-        position: "fixed",
-        left: "var(--sidebar-width)", top: 0, bottom: 0, width: 240,
-        background: "var(--surface-1)", borderRight: "1px solid var(--border-subtle)",
-        display: "flex", flexDirection: "column", zIndex: 99,
-        transition: "background var(--t-normal)",
-      }}>
+      <div className={`chat-history-panel${historyOpen ? " open" : ""}`}>
         <div style={{ padding: "18px 16px 12px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.4, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
             Query History
           </div>
-          <button className="btn btn-primary btn-sm" style={{ width: "100%", justifyContent: "center" }}
-            onClick={() => { setMessages([{ role: "system" }]); setApiError(null); }}>
+          <button
+            className="btn btn-primary btn-sm"
+            style={{ width: "100%", justifyContent: "center" }}
+            onClick={() => { setMessages([{ role: "system" }]); setApiError(null); setHistoryOpen(false); }}
+          >
             + New Query
           </button>
         </div>
@@ -226,23 +255,41 @@ export default function Chat() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="main-content" style={{ marginLeft: `calc(var(--sidebar-width) + 240px)` }}>
+      <div className="main-content chat-main-content">
         <header className="page-header">
-          <div>
-            <div className="page-title">AI Query Lab</div>
-            <div className="page-subtitle">Ask questions across your uploaded documents</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Hamburger — sidebar toggle on mobile */}
+            <button className="menu-toggle" onClick={() => setSidebarOpen(o => !o)} aria-label="Open menu">
+              ☰
+            </button>
+            <div>
+              <div className="page-title">AI Query Lab</div>
+              <div className="page-subtitle">Ask questions across your uploaded documents</div>
+            </div>
           </div>
           <div className="header-right">
+            {/* History toggle — mobile only */}
+            <button
+              className="chat-history-toggle"
+              onClick={() => setHistoryOpen(o => !o)}
+              aria-label="Query history"
+              title="Query History"
+            >
+              💬
+              {history.length > 0 && <span className="chat-history-badge">{history.length}</span>}
+            </button>
             <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode(d => !d)} />
             <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 99, background: "var(--surface-active)", border: "1px solid var(--border-strong)" }}>
               <span className="status-dot success" />
-              <span style={{ fontSize: 12, fontWeight: 600, color: "var(--accent-blue)" }}>RAG Online</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "var(--accent-blue)" }} className="rag-label">RAG Online</span>
             </div>
           </div>
         </header>
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - var(--header-height))" }}>
-          <div style={{ flex: 1, overflowY: "auto", padding: "24px 32px", display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* Messages */}
+          <div style={{ flex: 1, overflowY: "auto", padding: "24px 32px", display: "flex", flexDirection: "column", gap: 20 }}
+            className="chat-messages-area">
 
             {messages.length === 1 && messages[0].role === "system" && (
               <div style={{ display: "flex", justifyContent: "center", animation: "fadeUp 0.4s ease both" }}>
@@ -261,7 +308,12 @@ export default function Chat() {
             )}
 
             {messages.slice(1).map((msg, i) => (
-              <div key={i} style={{ display: "flex", flexDirection: msg.role === "user" ? "row-reverse" : "row", gap: 12, alignItems: "flex-start", animation: "fadeUp 0.3s ease both" }}>
+              <div key={i} style={{
+                display: "flex",
+                flexDirection: msg.role === "user" ? "row-reverse" : "row",
+                gap: 12, alignItems: "flex-start",
+                animation: "fadeUp 0.3s ease both",
+              }}>
                 <div style={{
                   width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
                   background: msg.role === "user"
@@ -275,7 +327,7 @@ export default function Chat() {
                   {msg.role === "user" ? initials : msg.isError ? "⚠" : "✧"}
                 </div>
 
-                <div style={{ maxWidth: "70%" }}>
+                <div className="chat-bubble-wrap">
                   <div style={{
                     background: msg.role === "user"
                       ? "linear-gradient(135deg, var(--accent-blue), var(--accent-blue-dim))"
@@ -288,6 +340,7 @@ export default function Chat() {
                     padding: "13px 17px", fontSize: 13.5, lineHeight: 1.65,
                     color: msg.role === "user" ? "white" : msg.isError ? "var(--status-error)" : "var(--text-secondary)",
                     boxShadow: msg.role === "user" ? "0 4px 16px rgba(26,110,247,0.2)" : "var(--shadow-sm)",
+                    wordBreak: "break-word",
                   }}>
                     {msg.role === "user" ? msg.content : <AnswerText text={msg.content} />}
                   </div>
@@ -297,7 +350,7 @@ export default function Chat() {
 
             {isLoading && (
               <div style={{ display: "flex", gap: 12, alignItems: "flex-start", animation: "fadeUp 0.3s ease both" }}>
-                <div style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, var(--accent-blue), var(--accent-cyan))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✧</div>
+                <div style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, var(--accent-blue), var(--accent-cyan))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>✧</div>
                 <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", borderRadius: "4px 18px 18px 18px", padding: "10px 16px" }}>
                   <TypingIndicator />
                 </div>
@@ -314,13 +367,9 @@ export default function Chat() {
             <div ref={bottomRef} />
           </div>
 
-          <div style={{ padding: "16px 32px 20px", background: "var(--header-bg)", backdropFilter: "blur(12px)", borderTop: "1px solid var(--border-subtle)" }}>
-            <div style={{
-              display: "flex", gap: 10, alignItems: "flex-end",
-              background: "var(--surface-2)", border: "1px solid var(--border-default)",
-              borderRadius: "var(--radius-lg)", padding: "10px 14px",
-              transition: "border-color var(--t-fast), box-shadow var(--t-fast)",
-            }}
+          {/* Input bar */}
+          <div className="chat-input-bar">
+            <div className="chat-input-wrap"
               onFocusCapture={e => { e.currentTarget.style.borderColor = "var(--accent-blue)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(26,110,247,0.1)"; }}
               onBlurCapture={e => { e.currentTarget.style.borderColor = "var(--border-default)"; e.currentTarget.style.boxShadow = "none"; }}
             >
@@ -329,7 +378,7 @@ export default function Chat() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKey}
-                placeholder="Ask a question about your documents… (Enter to send)"
+                placeholder="Ask a question… (Enter to send)"
                 style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "var(--text-primary)", fontFamily: "var(--font-body)", fontSize: 13.5, resize: "none", lineHeight: 1.5, minHeight: 20, maxHeight: 120 }}
                 rows={1}
               />
@@ -347,6 +396,133 @@ export default function Chat() {
       <style>{`
         @keyframes typingBounce { 0%,60%,100% { transform:translateY(0); } 30% { transform:translateY(-6px); } }
         @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+        /* History panel — desktop: fixed strip; mobile: slide-in drawer */
+        .chat-history-panel {
+          position: fixed;
+          left: var(--sidebar-width);
+          top: 0; bottom: 0;
+          width: 240px;
+          background: var(--surface-1);
+          border-right: 1px solid var(--border-subtle);
+          display: flex;
+          flex-direction: column;
+          z-index: 99;
+          transition: background var(--t-normal), transform var(--t-normal);
+        }
+
+        /* Main content offset for history panel on desktop */
+        .chat-main-content {
+          margin-left: calc(var(--sidebar-width) + 240px) !important;
+        }
+
+        .chat-messages-area {
+          padding: 24px 32px;
+        }
+
+        .chat-bubble-wrap {
+          max-width: 70%;
+        }
+
+        /* Input bar */
+        .chat-input-bar {
+          padding: 16px 32px 20px;
+          background: var(--header-bg);
+          backdrop-filter: blur(12px);
+          border-top: 1px solid var(--border-subtle);
+        }
+        .chat-input-wrap {
+          display: flex;
+          gap: 10px;
+          align-items: flex-end;
+          background: var(--surface-2);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-lg);
+          padding: 10px 14px;
+          transition: border-color var(--t-fast), box-shadow var(--t-fast);
+        }
+
+        /* History toggle button — hidden on desktop */
+        .chat-history-toggle {
+          display: none;
+          position: relative;
+          width: 36px; height: 36px;
+          border-radius: var(--radius-sm);
+          background: var(--surface-2);
+          border: 1px solid var(--border-subtle);
+          align-items: center; justify-content: center;
+          font-size: 16px; cursor: pointer;
+          color: var(--text-secondary);
+        }
+        .chat-history-badge {
+          position: absolute;
+          top: 4px; right: 4px;
+          width: 14px; height: 14px;
+          border-radius: 50%;
+          background: var(--accent-blue);
+          color: white;
+          font-size: 8px; font-weight: 700;
+          display: flex; align-items: center; justify-content: center;
+          border: 1.5px solid var(--surface-1);
+        }
+
+        /* ---- Tablet (≤900px) ---- */
+        @media (max-width: 900px) {
+          .chat-main-content {
+            margin-left: calc(var(--sidebar-width) + 200px) !important;
+          }
+          .chat-history-panel {
+            width: 200px;
+          }
+        }
+
+        /* ---- Mobile (≤700px) ---- */
+        @media (max-width: 700px) {
+          /* Sidebar handled by Theme.css — just reset main margin */
+          .chat-main-content {
+            margin-left: 0 !important;
+          }
+
+          /* History panel becomes a slide-in drawer from the right */
+          .chat-history-panel {
+            left: auto;
+            right: 0;
+            width: 280px;
+            transform: translateX(100%);
+            z-index: 149;
+            border-right: none;
+            border-left: 1px solid var(--border-subtle);
+            box-shadow: var(--shadow-lg);
+          }
+          .chat-history-panel.open {
+            transform: translateX(0);
+          }
+
+          /* Show history toggle button */
+          .chat-history-toggle {
+            display: flex;
+          }
+
+          /* Reduce message padding */
+          .chat-messages-area {
+            padding: 16px !important;
+          }
+
+          /* Bubbles take more width on small screens */
+          .chat-bubble-wrap {
+            max-width: 85%;
+          }
+
+          /* Tighter input bar */
+          .chat-input-bar {
+            padding: 10px 12px 14px;
+          }
+
+          /* Hide "RAG Online" text label, keep dot */
+          .rag-label {
+            display: none;
+          }
+        }
       `}</style>
     </div>
   );

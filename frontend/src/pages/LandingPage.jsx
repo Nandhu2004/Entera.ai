@@ -1,25 +1,62 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "./LandingPage.css";
 import { Link } from "react-router-dom";
 import bgImage from "../assets/bg-image.png";
 import aboutImage from "../assets/about-image.jpg";
 
 export default function LandingPage() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Close menu on resize to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768) setMenuOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Close menu when a nav link is clicked
+  const handleNavClick = () => setMenuOpen(false);
+
   return (
     <div id="home" className="landing-page">
       <nav className="navbar">
         <div className="logo">Entera.ai</div>
-        <div className="nav-right-group">
+
+        {/* Hamburger button — visible only on mobile */}
+        <button
+          className="hamburger"
+          onClick={() => setMenuOpen(o => !o)}
+          aria-label="Toggle menu"
+          aria-expanded={menuOpen}
+        >
+          <span className={`hamburger-line${menuOpen ? " open" : ""}`} />
+          <span className={`hamburger-line${menuOpen ? " open" : ""}`} />
+          <span className={`hamburger-line${menuOpen ? " open" : ""}`} />
+        </button>
+
+        {/* Nav group — slides down on mobile when open */}
+        <div className={`nav-right-group${menuOpen ? " open" : ""}`}>
           <ul className="nav-links">
-            <li className="active"><a href="#home">Home</a></li>
-            <li><a href="#about">About</a></li>
+            <li className="active"><a href="#home" onClick={handleNavClick}>Home</a></li>
+            <li><a href="#about" onClick={handleNavClick}>About</a></li>
           </ul>
           <div className="auth-buttons">
-            <Link to="/signin"><button className="signin-btn">Sign in</button></Link>
-            <Link to="/signup"><button className="signup-btn">Sign up</button></Link>
+            <Link to="/signin" onClick={handleNavClick}>
+              <button className="signin-btn">Sign in</button>
+            </Link>
+            <Link to="/signup" onClick={handleNavClick}>
+              <button className="signup-btn">Sign up</button>
+            </Link>
           </div>
         </div>
       </nav>
+
+      {/* Mobile overlay — tap to close menu */}
+      {menuOpen && (
+        <div className="nav-overlay" onClick={() => setMenuOpen(false)} aria-hidden="true" />
+      )}
 
       <section className="hero">
         <div className="hero-bg-image">

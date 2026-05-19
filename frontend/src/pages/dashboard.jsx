@@ -25,7 +25,7 @@ function ThemeToggle({ darkMode, onToggle }) {
   );
 }
 
-function Sidebar({ active, username, initials }) {
+function Sidebar({ active, username, initials, open, onClose }) {
   const navigate = useNavigate();
   const navItems = [
     { label: "Dashboard",      icon: "⊞", path: "/dashboard" },
@@ -40,24 +40,30 @@ function Sidebar({ active, username, initials }) {
     });
     navigate("/");
   };
+  const handleNavClick = () => {
+    // Close sidebar on mobile when a nav item is clicked
+    if (onClose) onClose();
+  };
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${open ? " open" : ""}`}>
       <div className="sidebar-logo">
         <div className="logo-icon">📄</div>
         <span className="logo-text">Entera<em>.ai</em></span>
+        {/* Close button — only visible on mobile */}
+        <button className="sidebar-close-btn" onClick={onClose} aria-label="Close menu">✕</button>
       </div>
       <nav className="sidebar-nav">
         <span className="nav-section-label">Platform</span>
         {navItems.map((item) => (
           <Link key={item.path} to={item.path}
-            className={`nav-item${active === item.label ? " active" : ""}`}>
+            className={`nav-item${active === item.label ? " active" : ""}`}
+            onClick={handleNavClick}>
             <span className="nav-icon">{item.icon}</span>
             <span className="nav-label">{item.label}</span>
           </Link>
         ))}
         <span className="nav-section-label" style={{ marginTop: 16 }}>System</span>
         <div className="nav-item" onClick={handleLogout} style={{ color: "var(--status-error)" }}>
-          
           <span className="nav-label">Sign Out</span>
         </div>
       </nav>
@@ -99,39 +105,44 @@ export default function Dashboard() {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", darkMode ? "dark" : "light");
     localStorage.setItem("theme", darkMode ? "dark" : "light");
   }, [darkMode]);
 
+  // Close sidebar when resizing back to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 700) setMenuOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
-// 2. Wrap fetchDocs in useCallback (add `navigate` as its dependency)
-const fetchDocs = useCallback(async () => {
-  try {
-    const token = localStorage.getItem("token") || localStorage.getItem("access_token");
-    const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
-  
+  const fetchDocs = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token") || localStorage.getItem("access_token");
+      const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
       const res = await fetch(`${API_URL}/documents`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (res.status === 401) { navigate("/signin"); return; }
-    const data = await res.json();
-    setDocs(data);
-  } catch (err) {
-    console.error("Failed to fetch documents:", err);
-  } finally {
-    setLoading(false);
-  }
-}, [navigate]);
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.status === 401) { navigate("/signin"); return; }
+      const data = await res.json();
+      setDocs(data);
+    } catch (err) {
+      console.error("Failed to fetch documents:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate]);
 
-// 3. Now the useEffect is valid — fetchDocs is stable
-useEffect(() => {
-  if (!hasToken()) { navigate("/signin"); return; }
-  fetchDocs();
-}, [navigate, fetchDocs]);
+  useEffect(() => {
+    if (!hasToken()) { navigate("/signin"); return; }
+    fetchDocs();
+  }, [navigate, fetchDocs]);
 
-  // Derive stats from real docs
   const total      = docs.length;
   const indexed    = docs.filter(d => d.status === "indexed" || !d.status).length;
   const processing = docs.filter(d => d.status === "processing").length;
@@ -140,13 +151,37 @@ useEffect(() => {
 
   return (
     <div className="app-shell">
-      <Sidebar active="Dashboard" username={username} initials={initials} />
+      {/* Mobile overlay — tap to close sidebar */}
+      <div
+        className={`sidebar-overlay${menuOpen ? " open" : ""}`}
+        onClick={() => setMenuOpen(false)}
+        aria-hidden="true"
+      />
+
+      <Sidebar
+        active="Dashboard"
+        username={username}
+        initials={initials}
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+      />
+
       <div className="main-content">
 
         <header className="page-header">
-          <div>
-            <div className="page-title">{greeting}, {username} 👋</div>
-            <div className="page-subtitle">Document intelligence overview</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {/* Hamburger — only visible on mobile */}
+            <button
+              className="menu-toggle"
+              onClick={() => setMenuOpen(o => !o)}
+              aria-label="Open menu"
+            >
+              ☰
+            </button>
+            <div>
+              <div className="page-title">{greeting}, {username} 👋</div>
+              <div className="page-subtitle">Document intelligence overview</div>
+            </div>
           </div>
           <div className="header-right">
             <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode(d => !d)} />
@@ -178,7 +213,8 @@ useEffect(() => {
             </div>
           )}
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr 300px", gap: 18, alignItems: "start" }}>
+          {/* 3-column dashboard grid — now uses responsive class */}
+          <div className="dashboard-grid">
 
             {/* Storage Distribution */}
             <div className="card anim-up" style={{ animationDelay: "0ms" }}>
