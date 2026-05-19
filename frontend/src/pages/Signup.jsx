@@ -14,11 +14,13 @@ function validatePassword(password) {
 }
 
 export default function SignUp() {
-  const [fullName, setFullName]   = useState("");
-  const [email, setEmail]         = useState("");
-  const [password, setPassword]   = useState("");
-  const [error, setError]         = useState("");
-  const [showRules, setShowRules] = useState(false);
+  const [fullName, setFullName]     = useState("");
+  const [email, setEmail]           = useState("");
+  const [password, setPassword]     = useState("");
+  const [error, setError]           = useState("");
+  const [showRules, setShowRules]   = useState(false);
+  const [submitted, setSubmitted]   = useState(false);
+  const [sentEmail, setSentEmail]   = useState("");
   const navigate = useNavigate();
 
   const rules = validatePassword(password);
@@ -47,9 +49,8 @@ export default function SignUp() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        alert(data.message || "Verification email sent! Please check your inbox.");
-        navigate("/signin");
+        setSentEmail(email);
+        setSubmitted(true);
       } else {
         const errorData = await response.json();
         setError(errorData.detail || "Registration failed. Try again.");
@@ -58,6 +59,59 @@ export default function SignUp() {
       setError("Server connection failed. Please try again later.");
     }
   };
+
+  if (submitted) {
+    return (
+      <div className="auth-container">
+        <div className="auth-card" style={{ textAlign: "center" }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: "50%",
+            background: "#0f2a1a", border: "2px solid #166534",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            margin: "0 auto 1.25rem",
+          }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+              stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+
+          <h2 style={{ color: "#f9fafb", fontSize: 22, fontWeight: 600, margin: "0 0 8px" }}>
+            Check your inbox
+          </h2>
+          <p style={{ color: "#9ca3af", fontSize: 14, lineHeight: 1.7, margin: "0 0 1.25rem" }}>
+            We sent a verification email to
+          </p>
+          <div style={{
+            display: "inline-block", background: "#1f2937", color: "#d1d5db",
+            borderRadius: 20, padding: "4px 16px", fontSize: 13, marginBottom: "1.75rem",
+          }}>
+            {sentEmail}
+          </div>
+          <p style={{ color: "#6b7280", fontSize: 13, lineHeight: 1.6, margin: "0 0 1.75rem" }}>
+            Click the link in the email to activate your account, then sign in.
+          </p>
+
+          <button
+            className="auth-btn"
+            onClick={() => navigate("/signin")}
+          >
+            Go to sign in
+          </button>
+
+          <p className="auth-footer" style={{ marginTop: "1rem" }}>
+            Wrong email?{" "}
+            <span
+              style={{ color: "#3b82f6", cursor: "pointer" }}
+              onClick={() => setSubmitted(false)}
+            >
+              Go back
+            </span>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-container">
