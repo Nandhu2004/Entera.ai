@@ -71,9 +71,11 @@ export default function SignUp() {
             margin: "0 auto 1.25rem",
           }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-              stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12" />
+              stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
             </svg>
+          </div>
           </div>
 
           <h2 style={{ color: "#f9fafb", fontSize: 22, fontWeight: 600, margin: "0 0 8px" }}>
