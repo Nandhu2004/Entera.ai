@@ -6,7 +6,7 @@ import Dashboard from "./pages/dashboard";
 import Vault from "./pages/Vault";
 import Chat from "./pages/Chat";
 import Upload from "./pages/upload";
-import VerifiedEmail from "./verifiedEmail";
+import VerifiedEmail from "./pages/verifiedEmail";
 
 
 function App() {
