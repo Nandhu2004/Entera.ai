@@ -77,19 +77,19 @@ export default function SignUp() {
             </svg>
           </div>
 
-          <h2 style={{ color: "#94a3b8", fontSize: 22, fontWeight: 600, margin: "0 0 8px" }}>
+          <h2 style={{ color: "#5f656b", fontSize: 22, fontWeight: 600, margin: "0 0 8px" }}>
             Check your inbox
           </h2>
-          <p style={{ color: "#94a3b8", fontSize: 14, lineHeight: 1.7, margin: "0 0 1.25rem" }}>
+          <p style={{ color: "#5f656b", fontSize: 14, lineHeight: 1.7, margin: "0 0 1.25rem" }}>
             We sent a verification email to
           </p>
           <div style={{
-            display: "inline-block", background: "#1f2937", color: "#94a3b8",
+            display: "inline-block", background: "#1f2937", color: "#5f656b",
             borderRadius: 20, padding: "4px 16px", fontSize: 13, marginBottom: "1.75rem",
           }}>
             {sentEmail}
           </div>
-          <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.6, margin: "0 0 1.75rem" }}>
+          <p style={{ color: "#5f656b", fontSize: 13, lineHeight: 1.6, margin: "0 0 1.75rem" }}>
             Click the link in the email to activate your account, then sign in.
           </p>
 
@@ -150,10 +150,10 @@ export default function SignUp() {
               <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
                 {rules.map((r) => (
                   <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
-                    <span style={{ color: r.passed ? "#22c55e" : "#94a3b8", fontSize: 14 }}>
+                    <span style={{ color: r.passed ? "#22c55e" : "#5f656b", fontSize: 14 }}>
                       {r.passed ? "✓" : "○"}
                     </span>
-                    <span style={{ color: r.passed ? "#22c55e" : "#94a3b8" }}>{r.label}</span>
+                    <span style={{ color: r.passed ? "#22c55e" : "#5f656b" }}>{r.label}</span>
                   </div>
                 ))}
               </div>

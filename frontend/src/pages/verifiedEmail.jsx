@@ -31,10 +31,10 @@ export default function VerifiedEmail() {
                 <path d="M21 12a9 9 0 1 1-6.219-8.56" />
               </svg>
             </div>
-            <h2 style={{ color: "#f9fafb", fontSize: 22, fontWeight: 600, margin: "0 0 8px" }}>
+            <h2 style={{ color: "#5f656b", fontSize: 22, fontWeight: 600, margin: "0 0 8px" }}>
               Verifying your email...
             </h2>
-            <p style={{ color: "#9ca3af", fontSize: 14 }}>Please wait a moment.</p>
+            <p style={{ color: "#5f656b", fontSize: 14 }}>Please wait a moment.</p>
           </>
         )}
 
@@ -51,10 +51,10 @@ export default function VerifiedEmail() {
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
-            <h2 style={{ color: "#f9fafb", fontSize: 22, fontWeight: 600, margin: "0 0 8px" }}>
+            <h2 style={{ color: "#5f656b", fontSize: 22, fontWeight: 600, margin: "0 0 8px" }}>
               Email verified!
             </h2>
-            <p style={{ color: "#9ca3af", fontSize: 14, lineHeight: 1.7, margin: "0 0 1.75rem" }}>
+            <p style={{ color: "#5f656b", fontSize: 14, lineHeight: 1.7, margin: "0 0 1.75rem" }}>
               Your account is now active. You can sign in and get started.
             </p>
             <button className="auth-btn" onClick={() => navigate("/signin")}>
@@ -77,10 +77,10 @@ export default function VerifiedEmail() {
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </div>
-            <h2 style={{ color: "#f9fafb", fontSize: 22, fontWeight: 600, margin: "0 0 8px" }}>
+            <h2 style={{ color: "#5f656b", fontSize: 22, fontWeight: 600, margin: "0 0 8px" }}>
               Invalid or expired link
             </h2>
-            <p style={{ color: "#9ca3af", fontSize: 14, lineHeight: 1.7, margin: "0 0 1.75rem" }}>
+            <p style={{ color: "#5f656b", fontSize: 14, lineHeight: 1.7, margin: "0 0 1.75rem" }}>
               This verification link is no longer valid. Please sign up again or contact support.
             </p>
             <button className="auth-btn" onClick={() => navigate("/signup")}>
