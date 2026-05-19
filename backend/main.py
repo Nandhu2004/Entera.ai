@@ -14,6 +14,7 @@ from mailer import send_verification_email
 from datetime import datetime, timedelta
 import re
 import logging
+from fastapi.responses import RedirectResponse
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -132,20 +133,20 @@ async def signup(
 # -----------------------------
 # Email Verification
 # -----------------------------
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
 @app.get("/verify")
 async def verify_email(token: str, db: Session = Depends(get_db)):
-
     user = db.query(User).filter(User.verification_token == token).first()
 
     if not user:
-        raise HTTPException(status_code=400, detail="Invalid or expired token")
+        return RedirectResponse(url=f"{FRONTEND_URL}/verified?status=invalid")
 
     user.is_verified = True
     user.verification_token = None
-
     db.commit()
 
-    return {"message": "Email verified successfully! You can now log in."}
+    return RedirectResponse(url=f"{FRONTEND_URL}/verified?status=success")
 
 
 # -----------------------------
