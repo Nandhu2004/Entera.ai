@@ -33,7 +33,7 @@ function ThemeToggle({ darkMode, onToggle }) {
       <span className={`toggle-track${darkMode ? " on" : ""}`}>
         <span className={`toggle-thumb${darkMode ? " on" : ""}`} />
       </span>
-      {darkMode ? "🌙 Dark" : "☀️ Light"}
+      {darkMode ? "Dark" : "Light"}
     </button>
   );
 }
@@ -43,7 +43,7 @@ function Sidebar({ active, username, initials }) {
   const navItems = [
     { label: "Dashboard",      icon: "⊞", path: "/dashboard" },
     { label: "Document Vault", icon: "🗄", path: "/vault" },
-    { label: "AI Query Lab",   icon: "🤖", path: "/chat" },
+    { label: "AI Query Lab",   icon: "✧", path: "/chat" },
     { label: "Upload Center",  icon: "⬆", path: "/upload" },
   ];
   return (
@@ -65,7 +65,6 @@ function Sidebar({ active, username, initials }) {
         <div className="nav-item"
           onClick={() => { fullLogout(); navigate("/"); }}
           style={{ color: "var(--status-error)" }}>
-          <span className="nav-icon">🚪</span>
           <span className="nav-label">Sign Out</span>
         </div>
       </nav>
@@ -248,7 +247,7 @@ export default function Chat() {
             {messages.length === 1 && messages[0].role === "system" && (
               <div style={{ display: "flex", justifyContent: "center", animation: "fadeUp 0.4s ease both" }}>
                 <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-xl)", padding: "28px 32px", maxWidth: 520, textAlign: "center", boxShadow: "var(--shadow-card)" }}>
-                  <div style={{ fontSize: 34, marginBottom: 12 }}>🤖</div>
+                  <div style={{ fontSize: 34, marginBottom: 12 }}>✧</div>
                   <div style={{ fontWeight: 700, fontSize: 16, color: "var(--text-primary)", marginBottom: 8 }}>
                     Document Intelligence Assistant
                   </div>
@@ -273,7 +272,7 @@ export default function Chat() {
                   fontSize: msg.role === "user" ? 12 : 16, fontWeight: 700, color: "white",
                   border: msg.isError ? "1px solid rgba(255,92,122,0.4)" : "none",
                 }}>
-                  {msg.role === "user" ? initials : msg.isError ? "⚠" : "🤖"}
+                  {msg.role === "user" ? initials : msg.isError ? "⚠" : "✧"}
                 </div>
 
                 <div style={{ maxWidth: "70%" }}>
@@ -298,7 +297,7 @@ export default function Chat() {
 
             {isLoading && (
               <div style={{ display: "flex", gap: 12, alignItems: "flex-start", animation: "fadeUp 0.3s ease both" }}>
-                <div style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, var(--accent-blue), var(--accent-cyan))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🤖</div>
+                <div style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, var(--accent-blue), var(--accent-cyan))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✧</div>
                 <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", borderRadius: "4px 18px 18px 18px", padding: "10px 16px" }}>
                   <TypingIndicator />
                 </div>

@@ -34,7 +34,7 @@ function ThemeToggle({ darkMode, onToggle }) {
       <span className={`toggle-track${darkMode ? " on" : ""}`}>
         <span className={`toggle-thumb${darkMode ? " on" : ""}`} />
       </span>
-      {darkMode ? "🌙 Dark" : "☀️ Light"}
+      {darkMode ? "Dark" : "Light"}
     </button>
   );
 }
@@ -45,7 +45,7 @@ function Sidebar({ active, username, initials }) {
   const navItems = [
     { label: "Dashboard",      icon: "⊞", path: "/dashboard" },
     { label: "Document Vault", icon: "🗄", path: "/vault" },
-    { label: "AI Query Lab",   icon: "🤖", path: "/chat" },
+    { label: "AI Query Lab",   icon: "✧", path: "/chat" },
     { label: "Upload Center",  icon: "⬆", path: "/upload" },
   ];
   return (
@@ -67,7 +67,7 @@ function Sidebar({ active, username, initials }) {
         <div className="nav-item"
           onClick={() => { fullLogout(); navigate("/"); }}
           style={{ color: "var(--status-error)" }}>
-          <span className="nav-icon">🚪</span>
+          
           <span className="nav-label">Sign Out</span>
         </div>
       </nav>

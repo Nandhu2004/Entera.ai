@@ -20,7 +20,7 @@ function ThemeToggle({ darkMode, onToggle }) {
       <span className={`toggle-track${darkMode ? " on" : ""}`}>
         <span className={`toggle-thumb${darkMode ? " on" : ""}`} />
       </span>
-      {darkMode ? "🌙 Dark" : "☀️ Light"}
+      {darkMode ? "Dark" : "Light"}
     </button>
   );
 }
@@ -30,7 +30,7 @@ function Sidebar({ active, username, initials }) {
   const navItems = [
     { label: "Dashboard",      icon: "⊞", path: "/dashboard" },
     { label: "Document Vault", icon: "🗄", path: "/vault" },
-    { label: "AI Query Lab",   icon: "🤖", path: "/chat" },
+    { label: "AI Query Lab",   icon: "✧", path: "/chat" },
     { label: "Upload Center",  icon: "⬆", path: "/upload" },
   ];
   const handleLogout = () => {
@@ -57,7 +57,7 @@ function Sidebar({ active, username, initials }) {
         ))}
         <span className="nav-section-label" style={{ marginTop: 16 }}>System</span>
         <div className="nav-item" onClick={handleLogout} style={{ color: "var(--status-error)" }}>
-          <span className="nav-icon">🚪</span>
+          
           <span className="nav-label">Sign Out</span>
         </div>
       </nav>
@@ -163,7 +163,7 @@ useEffect(() => {
           {!loading && total > 0 && (
             <div className="grid-4 stagger" style={{ marginBottom: 22 }}>
               {[
-                { label: "Total Documents", value: total,      color: "var(--accent-blue)",    icon: "🗃" },
+                { label: "Total Documents", value: total,      color: "var(--accent-blue)",    icon: "📄" },
                 { label: "Indexed",         value: indexed,    color: "var(--status-success)",  icon: "✅" },
                 { label: "Processing",      value: processing, color: "var(--accent-violet)",   icon: "⏳" },
                 { label: "Failed",          value: failed,     color: "var(--status-error)",    icon: "⚠" },

@@ -26,7 +26,7 @@ const LogoutButton = () => {
         cursor: 'pointer'
       }}
     >
-      <span style={{ marginRight: '10px' }}>🚪</span> Logout
+       Logout
     </button>
   );
 };
