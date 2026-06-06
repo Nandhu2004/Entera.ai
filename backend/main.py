@@ -68,12 +68,17 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(lifespan=lifespan)
-
-
 # -----------------------------
 # Middleware
 # -----------------------------
+is_production = os.getenv("ENVIRONMENT") == "production"
+
+app = FastAPI(
+    lifespan=lifespan,
+    docs_url=None if is_production else "/docs",
+    redoc_url=None if is_production else "/redoc",
+    openapi_url=None if is_production else "/openapi.json",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -100,14 +105,6 @@ async def security_headers(request, call_next):
     )
 
     return response
-
-is_production = os.getenv("ENVIRONMENT") == "production"
-
-app = FastAPI(
-    docs_url=None if is_production else "/docs",
-    redoc_url=None if is_production else "/redoc",
-    openapi_url=None if is_production else "/openapi.json",
-)
 
 
 # -----------------------------
@@ -173,11 +170,9 @@ async def verify_email(token: str, db: Session = Depends(get_db)):
 async def login(email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     try:
         logger.debug(f"Login attempt: email={email}")
-        logger.debug(f"Raw password length: {len(password.encode('utf-8'))} bytes")
         
         # Truncate password
         safe_password = password.encode("utf-8")[:72].decode("utf-8", "ignore")
-        logger.debug(f"Safe password: {safe_password}")
         
         user = db.query(User).filter(User.email == email).first()
         if not user or not verify_password(safe_password, user.hashed_password):
@@ -189,7 +184,6 @@ async def login(email: str = Form(...), password: str = Form(...), db: Session =
             raise HTTPException(status_code=403, detail="Account not verified")
         
         access_token = create_access_token(data={"sub": user.email})
-        logger.debug(f"Access token created: {access_token}")
         
         return {
             "access_token": access_token,
