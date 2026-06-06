@@ -101,6 +101,14 @@ async def security_headers(request, call_next):
 
     return response
 
+is_production = os.getenv("ENVIRONMENT") == "production"
+
+app = FastAPI(
+    docs_url=None if is_production else "/docs",
+    redoc_url=None if is_production else "/redoc",
+    openapi_url=None if is_production else "/openapi.json",
+)
+
 
 # -----------------------------
 # Signup
