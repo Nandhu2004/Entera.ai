@@ -14,13 +14,14 @@ function validatePassword(password) {
 }
 
 export default function SignUp() {
-  const [fullName, setFullName]   = useState("");
-  const [email, setEmail]         = useState("");
-  const [password, setPassword]   = useState("");
-  const [error, setError]         = useState("");
-  const [showRules, setShowRules] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [sentEmail, setSentEmail] = useState("");
+  const [fullName, setFullName]       = useState("");
+  const [email, setEmail]             = useState("");
+  const [password, setPassword]       = useState("");
+  const [error, setError]             = useState("");
+  const [showRules, setShowRules]     = useState(false);
+  const [submitted, setSubmitted]     = useState(false);
+  const [sentEmail, setSentEmail]     = useState("");
+  const [resendStatus, setResendStatus] = useState("");
   const navigate = useNavigate();
 
   const rules = validatePassword(password);
@@ -57,6 +58,21 @@ export default function SignUp() {
       }
     } catch (err) {
       setError("Server connection failed. Please try again later.");
+    }
+  };
+
+  const handleResend = async () => {
+    setResendStatus("sending");
+    try {
+      const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+      const res = await fetch(`${API_URL}/resend-verification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: sentEmail }),
+      });
+      setResendStatus(res.ok ? "sent" : "error");
+    } catch {
+      setResendStatus("error");
     }
   };
 
@@ -98,12 +114,26 @@ export default function SignUp() {
           </button>
 
           <p className="auth-footer" style={{ marginTop: "1rem" }}>
-            Wrong email?{" "}
-            <span
-              style={{ color: "#3b82f6", cursor: "pointer" }}
-              onClick={() => setSubmitted(false)}
-            >
-              Go back
+            {resendStatus === "sent" ? (
+              <span style={{ color: "#22c55e" }}>Email resent!</span>
+            ) : resendStatus === "error" ? (
+              <span style={{ color: "red" }}>
+                Failed to resend.{" "}
+                <span style={{ color: "#3b82f6", cursor: "pointer" }} onClick={handleResend}>
+                  Try again
+                </span>
+              </span>
+            ) : (
+              <>
+                Didn't receive it?{" "}
+                <span style={{ color: "#3b82f6", cursor: "pointer" }} onClick={handleResend}>
+                  {resendStatus === "sending" ? "Sending…" : "Resend email"}
+                </span>
+              </>
+            )}
+            {" · "}
+            <span style={{ color: "#3b82f6", cursor: "pointer" }} onClick={() => { setSubmitted(false); setResendStatus(""); }}>
+              Wrong email?
             </span>
           </p>
         </div>

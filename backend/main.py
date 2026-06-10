@@ -8,10 +8,15 @@ from qdrant_client.models import Filter, FieldCondition, MatchValue
 from RAG.vectorstore import client, COLLECTION_NAME
 from RAG.vectorstore import init_collection
 from RAG.qa_chain import store_document, query_document, llm_client
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from fastapi import Request
 from auth import create_access_token, verify_password, get_password_hash, get_current_user
 from database import get_db, engine, Base
 from mailer import send_verification_email
-from datetime import datetime, timedelta
+from datetime import datetime,timedelta, timezone
+from pydantic import BaseModel
 import re
 import os
 import logging
@@ -20,10 +25,7 @@ from fastapi.responses import RedirectResponse
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-
-# -----------------------------
-# Database Model
-# -----------------------------
+#Database Models
 class User(Base):
     __tablename__ = "users"
 
@@ -36,20 +38,18 @@ class User(Base):
 
     is_verified = Column(Boolean, default=False)
     verification_token = Column(String, unique=True, nullable=True)
+
 class SuspiciousActivity(Base):
     __tablename__ = "suspicious_activity"
 
     id = Column(Integer, primary_key=True)
     user_id = Column(String, index=True)
-    flagged_at = Column(DateTime, default=datetime.utcnow)
+    flagged_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-# -----------------------------
-# Startup / Lifespan
-# -----------------------------
+#Lifespan
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
-    # Initialize Postgres
     try:
         print("Starting Postgres table creation...")
         Base.metadata.create_all(bind=engine)
@@ -57,7 +57,6 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"Error creating Postgres tables: {e}")
 
-    # Initialize Qdrant
     try:
         print("Initializing Qdrant...")
         init_collection()
@@ -68,9 +67,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-# -----------------------------
-# Middleware
-# -----------------------------
+#middleware
 is_production = os.getenv("ENVIRONMENT") == "production"
 
 app = FastAPI(
@@ -79,6 +76,10 @@ app = FastAPI(
     redoc_url=None if is_production else "/redoc",
     openapi_url=None if is_production else "/openapi.json",
 )
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -107,9 +108,6 @@ async def security_headers(request, call_next):
     return response
 
 
-# -----------------------------
-# Signup
-# -----------------------------
 @app.post("/signup")
 async def signup(
     background_tasks: BackgroundTasks,
@@ -118,11 +116,11 @@ async def signup(
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    # Check if email exists
+    if len(password.encode("utf-8")) > 72:
+        raise HTTPException(status_code=400, detail="Password must be 72 bytes or fewer")
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Check username
     if db.query(User).filter(User.username == username).first():
         raise HTTPException(status_code=400, detail="Username already taken")
 
@@ -144,9 +142,7 @@ async def signup(
 
     return {"message": f"Verification email sent to {email}. Please verify to login."}
 
-# -----------------------------
-# Email Verification
-# -----------------------------
+#Email Verification
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 @app.get("/verify")
@@ -163,15 +159,14 @@ async def verify_email(token: str, db: Session = Depends(get_db)):
     return RedirectResponse(url=f"{FRONTEND_URL}/verified?status=success")
 
 
-# -----------------------------
-# Login
-# -----------------------------
 @app.post("/token")
 async def login(email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    if len(password.encode("utf-8")) > 72:
+        raise HTTPException(status_code=400, detail="Password must be 72 bytes or fewer")
     try:
         logger.debug(f"Login attempt: email={email}")
         
-        # Truncate password
+        
         safe_password = password.encode("utf-8")[:72].decode("utf-8", "ignore")
         
         user = db.query(User).filter(User.email == email).first()
@@ -191,13 +186,34 @@ async def login(email: str = Form(...), password: str = Form(...), db: Session =
             "username": user.username
         }
     
+    except HTTPException:
+        raise
     except Exception as e:
-        # THIS WILL SHOW THE FULL TRACE IN TERMINAL
         logger.exception("/token internal error")
         raise HTTPException(status_code=500, detail=str(e))
-# -----------------------------
-# Upload Document
-# -----------------------------
+
+class ResendRequest(BaseModel):
+    email: str
+
+@app.post("/resend-verification")
+async def resend_verification(
+    background_tasks: BackgroundTasks,
+    data: ResendRequest,
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.email == data.email).first()
+
+    if not user or user.is_verified:
+        return {"message": "If that email exists, a verification link has been sent."}
+
+    token = str(uuid.uuid4())
+    user.verification_token = token
+    db.commit()
+
+    background_tasks.add_task(send_verification_email, data.email, token)
+
+    return {"message": "Verification email resent."}
+
 @app.post("/upload")
 async def upload_file(
     user_id: str = Depends(get_current_user),
@@ -220,7 +236,7 @@ def flag_user(user_id: str, db: Session):
     db.commit()
 
 def is_user_banned(user_id: str, db: Session) -> bool:
-    cutoff = datetime.utcnow() - timedelta(minutes=10)
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=10)
     count = db.query(SuspiciousActivity).filter(
         SuspiciousActivity.user_id == user_id,
         SuspiciousActivity.flagged_at >= cutoff
@@ -309,9 +325,7 @@ SUSPICIOUS_KEYWORDS = [
 def needs_llm_check(question: str) -> bool:
     lowered = question.lower()
     return any(keyword in lowered for keyword in SUSPICIOUS_KEYWORDS)
-# -----------------------------
-# Ask Question
-# -----------------------------
+
 @app.post("/ask")
 async def ask(
     user_id: str = Depends(get_current_user),
@@ -347,13 +361,11 @@ async def get_documents(user_id: str = Depends(get_current_user)):
                 )
             ]
         ),
-        limit=1000, # Increased limit to ensure we catch all chunks for deduping
+        limit=1000,
         with_payload=True,
         with_vectors=False
     )
 
-    # 1. Extract payload and handle deduplication
-    # Since Qdrant stores chunks, multiple points will have the same doc_id
     unique_docs = {}
     for point in points:
         payload = point.payload
@@ -368,7 +380,7 @@ async def get_documents(user_id: str = Depends(get_current_user)):
                 "type": payload.get("type", "PDF")
             }
 
-    # Return as a clean list for the frontend
+
     return list(unique_docs.values())
     
     # Deduplicate by doc_id — each doc has multiple chunks
@@ -393,7 +405,7 @@ async def delete_document(
     try:
         logger.debug(f"Attempting to delete doc_id: {doc_id} for user: {user_id}")
         
-        # Qdrant delete returns the operation status
+
         result = client.delete(
             collection_name=COLLECTION_NAME,
             points_selector=Filter(
@@ -403,9 +415,7 @@ async def delete_document(
                 ]
             )
         )
-        
-        # Note: Qdrant delete is asynchronous at the cluster level; 
-        # it usually returns "acknowledged" even if no points matched.
+
         return {"status": "success", "message": f"Delete request for {doc_id} processed"}
         
     except Exception as e:
