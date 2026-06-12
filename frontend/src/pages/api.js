@@ -1,11 +1,8 @@
-// ============================================================
-// api.js — DocuVault API Service
-// ============================================================
+
 
 const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
-// ── Token helpers ────────────────────────────────────────────
-export const getToken     = ()                       => localStorage.getItem("token") || localStorage.getItem("access_token");
+export const getToken     = ()                       => localStorage.getItem("access_token");
 export const getUsername  = ()                       => localStorage.getItem("username");
 export const getUserEmail = ()                       => localStorage.getItem("user_email");
 export const setAuth      = (token, username, email) => {
@@ -25,7 +22,6 @@ export const requireAuth  = (navigate) => {
   return true;
 };
 
-// ── Shared fetch wrapper ─────────────────────────────────────
 async function apiFetch(path, options = {}) {
   const token = getToken();
   const headers = { ...(options.headers || {}) };
@@ -44,13 +40,7 @@ async function apiFetch(path, options = {}) {
   return data;
 }
 
-// ── Auth endpoints ───────────────────────────────────────────
 
-/**
- * POST /signup
- * Body: FormData { username, email, password }
- * Returns: { message }
- */
 export async function signup({ username, email, password }) {
   const form = new FormData();
   form.append("username", username);
@@ -59,11 +49,7 @@ export async function signup({ username, email, password }) {
   return apiFetch("/signup", { method: "POST", body: form });
 }
 
-/**
- * POST /token
- * Body: FormData { email, password }
- * Returns: { access_token, token_type, username }
- */
+
 export async function login({ email, password }) {
   const form = new FormData();
   form.append("email",    email);
@@ -73,25 +59,12 @@ export async function login({ email, password }) {
   return data;
 }
 
-/**
- * GET /verify?token=<token>
- * Returns: { message }
- */
+
 export async function verifyEmail(token) {
   return apiFetch(`/verify?token=${encodeURIComponent(token)}`, { method: "GET" });
 }
 
-// ── Document endpoints ───────────────────────────────────────
 
-/**
- * POST /upload
- * Header: Authorization: Bearer <token>  (attached if present; server enforces auth)
- * Body: FormData { file: <File> }
- * Returns: { message, doc_id, owner }
- *
- * Uses XHR instead of fetch so we get real byte-level upload progress.
- * onProgress(pct: number) is called as bytes are sent.
- */
 export async function uploadDocument(file, onProgress) {
   return new Promise((resolve, reject) => {
     const form = new FormData();
@@ -136,20 +109,14 @@ export async function uploadDocument(file, onProgress) {
   });
 }
 
-/**
- * POST /ask
- * Header: Authorization: Bearer <token>
- * Body: FormData { question }
- * Returns: RAG result — shape depends on qa_chain implementation.
- *   Typical: { answer, sources: [{ doc_id, filename, page, snippet }] }
- */
+
 export async function askQuestion(question) {
   const form = new FormData();
   form.append("question", question);
   return apiFetch("/ask", { method: "POST", body: form });
 }
 
-// ── Utility ──────────────────────────────────────────────────
+
 
 export function getUserInitials() {
   const name = getUsername() || "?";

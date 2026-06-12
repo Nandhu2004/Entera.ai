@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Auth.css";
+import { setAuth } from "./api";
 
 export default function SignIn() {
   const [email, setEmail]             = useState("");
@@ -28,8 +29,7 @@ export default function SignIn() {
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem("token", data.access_token);
-        localStorage.setItem("username", data.username);
+        setAuth(data.access_token, data.username, email);
         navigate("/dashboard");
       } else {
         const errorData = await response.json();

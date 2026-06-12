@@ -123,7 +123,7 @@ export default function Dashboard() {
 
   const fetchDocs = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token") || localStorage.getItem("access_token");
+      const token = localStorage.getItem("access_token");
       const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
       const res = await fetch(`${API_URL}/documents`, {
         headers: { Authorization: `Bearer ${token}` }
